@@ -1,5 +1,5 @@
-const studentmodel = require("../model/studentmodel")
-const usermodel = require("../model/usermodel")
+const StudentModel = require("../Models/StudentModel")
+const UserModel = require("../Models/UserModel")
 
 const mongoose = require('mongoose')
 const Objectid = mongoose.Types.ObjectId.isValid
