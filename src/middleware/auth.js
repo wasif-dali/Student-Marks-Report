@@ -1,4 +1,4 @@
-const usermodel = require('../model/usermodel')
+const usermodel = require('../Models/UserModel')
 const mongoose = require('mongoose')
 const Objectid = mongoose.Types.ObjectId.isValid
 const jwt = require('jsonwebtoken')

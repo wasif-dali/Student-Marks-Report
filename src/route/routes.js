@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { registration, userlogin } = require("../Controller/userController")
-const { createstudent,getstudent,findstudent,updatestudent, deletestudent } = require("../controller/studentcontroller")
+const { registration, userlogin } = require("../Controller/UserController")
+const { createstudent,getstudent,findstudent,updatestudent, deletestudent } = require("../Controller/StudentController")
 const { authentication, authorization } = require("../middleware/auth")
 
 router.post("/register", registration)
