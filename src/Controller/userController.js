@@ -1,60 +1,68 @@
-const UserModel = require("../Models/UserModel")
+const userModel = require("../models/userModel")
+const validation = require("../validations/validation.js")
+const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
-const bcrypt = require('bcrypt')
 
+const createUser = async (req, res) => {
 
-let reg = /^[a-zA-Z_ ]{2,50}$/
-let pass = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,15}$/
+    try {
+        data = req.body
+        let { fullName, phone, email, password } = data
 
-const registration = async function (req, res) {
+        if (validation.isValidBody(data)) return res.status(400).send({ status: false, message: "Provide all details to create account" })
+
+        if (!validation.isValid(fullName)) return res.status(400).send({ status: false, message: "enter your fullname" })
+        fullName = fullName.toLowerCase()
+        data.fullName = fullName
+        if (!validation.isValidfullName(fullName)) return res.status(400).send({ status: false, message: "enter a valid full name" })
+
+        if (!validation.isValid(phone)) return res.status(400).send({ status: false, message: "enter your phone number" })
+        if (!validation.isValidPhone(phone)) return res.status(400).send({ status: false, message: "enter valid phone number" })
+        const findPhone = await userModel.findOne({ phone: phone })
+        if (findPhone) return res.status(409).send({ status: false, message: "account already exsists with this phone number provide a new one" })
+
+        if (!validation.isValid(email)) return res.status(400).send({ status: false, message: "enter your emailId" })
+        email = email.toLowerCase()
+        data.email = email
+        if (!validation.isValidEmail(email)) return res.status(400).send({ status: false, message: "enter valid emailId" })
+        const findEmail = await userModel.findOne({ email: email })
+        if (findEmail) return res.status(409).send({ status: false, message: "account already exsists with this emaildId provide a new one" })
+
+        if (!validation.isValid(password)) return res.status(400).send({ status: false, message: "enter the phone number" })
+        if (!validation.isValidPassword(password)) return res.status(400).send({ status: false, message: "enter valid password" })
+        let saltRounds = 10
+        let hash = bcrypt.hashSync(password, saltRounds)
+        data.password = hash
+
+        const createUser = await userModel.create(data)
+        res.status(201).send({ status: true, data: createUser })
+
+    } catch (error) {
+        res.status(500).send({ status: false, message: error.message })
+    }
+}
+
+const loginUser = async (req, res) => {
     try {
         let data = req.body
-        if (Object.keys(data).length == 0) return res.status(400).send({ status: false, message: "please provide data for registration" })
-        let { name, password } = data
+        let { emailOrPhone, password } = data
 
-        if (!name) return res.status(400).send({ status: false, message: "please enter name for registration" })
-        if (!reg.test(name)) return res.status(400).send({ status: false, message: "name can have only alphabets and space" })
+        if (validation.isValidBody(data)) return res.status(400).send({ status: false, message: "Provide all details to login" })
 
-        if (!password) return res.status(400).send({ status: false, message: "please enter password for registration" })
-        if (!pass.test(password)) return res.status(400).send({ status: false, message: "password must have one capital one small one numericand one special character [#?!@$%^&*-] and length between 8-15" })
+        emailOrPhone= emailOrPhone.toLowerCase()
+        data.emailOrPhonee = emailOrPhone
+        let findUser = await userModel.findOne({ $or: [{ email: emailOrPhone }, { phone: emailOrPhone }] })
+        if (!findUser) return res.status(400).send({ status: false, message: "No account exsists with this email or phone" })
 
-        data.password = await bcrypt.hash(password, 10)
+        let verifyPassword = await bcrypt.compare(password, findUser.password)
+        if (!verifyPassword) return res.status(400).send({ status: false, message: "enter your correct password to login" })
 
+        let token = jwt.sign({ userId: findUser._id }, "PROJECT-6", { expiresIn: "600s" })
 
-        let savedata = await UserModel.create(data)
-       return res.status(200).send({ data: savedata })
-
-    } catch (err) {
-        return res.status(500).send({ status: false, msg: err.message })
-    }
-}
-const userlogin = async function (req, res) {
-    try {
-        let name = req.body.name
-        let password = req.body.password
-
-        if (Object.keys(req.body).length == 0) return res.status(400).send({ status: false, message: "please provide name and password for login" })
-
-        if (!name) return res.status(400).send({ status: false, message: "please enter name" })
-        if (!reg.test(name)) return res.status(400).send({ status: false, message: "name can have only alphabets and space" })
-
-        if (!password) return res.status(400).send({ status: false, message: "please enter password for login" })
-        if (!pass.test(password)) return res.status(400).send({ status: false, message: "password must have one capital one small one numericand one special character [#?!@$%^&*-] and length between 8-15" })
-
-        let data = await UserModel.findOne({name:name})
-        if (!data) {
-            return res.status(404).send({ status: false, message: "User not found with this name" })
-        }
-        let checkpassword = await bcrypt.compare(password, data.password);
-        if (!checkpassword) return res.status(400).send({ status: false, message: "login failed this password not matches with name" })
-
-        let token = jwt.sign({ id:data._id }, "secretkey")
-
-        return res.status(200).send({ status: true, data: { id:data._id, token: token } })
-
-    } catch (err) {
-        return res.status(500).send({ status: false, msg: err.message })
+        return res.status(201).send({ status: true, userId:findUser._id,message: token })
+    } catch (error) {
+        res.status(500).send({ status: false, message: error.message })
     }
 }
 
-module.exports = { registration, userlogin }
+module.exports = { createUser, loginUser }
