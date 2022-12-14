@@ -1,36 +1,29 @@
-const mongoose = require("mongoose");
-const objectid = mongoose.Schema.Types.ObjectId;
+const mongoose = require("mongoose")
+const ObjectId = mongoose.Schema.Types.ObjectId
 
-const studentschema = new mongoose.Schema({
-  userid: 
-  { 
-    ref: "user", 
-  type: objectid, 
-  required: true },
-  name: 
-  { 
-    type: String, 
-    required: true 
-  },
-  subject: 
-  { 
-    type: String, 
-    required: true 
-  },
-  marks: 
-  { 
-    type: Number, 
-    required: true 
-  },
-     isdeleted: 
-  {         
-     type: Boolean, 
-     default: false 
-  },
-  deletedAt: 
-  { 
-            type: Date 
-  },
-});
+const studentSchema = new mongoose.Schema({
+    fullName: {
+        type: String,
+        required: true
+    },
+    subject: {
+        type: String,
+        required: true,
+        enum: ["maths", "physics", "chemistry", "english"]
+    },
+    marks: {
+        type: Number,
+        required: true
+    },
+    userId:{
+        type:ObjectId,
+        required:true,
+        ref:"user"
+    },
+    isDeleted: {
+        type: Boolean,
+        default: false
+    }
+}, { timestamps: true })
 
-module.exports = mongoose.model("student", studentschema);
+module.exports = mongoose.model("studenlist", studentSchema)
