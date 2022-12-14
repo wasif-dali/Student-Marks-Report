@@ -1,4 +1,4 @@
-const usermodel = require("../Models/UserModel")
+const UserModel = require("../Models/UserModel")
 const jwt = require("jsonwebtoken")
 const bcrypt = require('bcrypt')
 
@@ -21,8 +21,8 @@ const registration = async function (req, res) {
         data.password = await bcrypt.hash(password, 10)
 
 
-        let savedata = await usermodel.create(data)
-        return res.status(200).send({ data: savedata })
+        let savedata = await UserModel.create(data)
+       return res.status(200).send({ data: savedata })
 
     } catch (err) {
         return res.status(500).send({ status: false, msg: err.message })
@@ -41,7 +41,7 @@ const userlogin = async function (req, res) {
         if (!password) return res.status(400).send({ status: false, message: "please enter password for login" })
         if (!pass.test(password)) return res.status(400).send({ status: false, message: "password must have one capital one small one numericand one special character [#?!@$%^&*-] and length between 8-15" })
 
-        let data = await usermodel.findOne({name:name})
+        let data = await UserModel.findOne({name:name})
         if (!data) {
             return res.status(404).send({ status: false, message: "User not found with this name" })
         }
