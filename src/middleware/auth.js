@@ -1,47 +1,38 @@
-const usermodel = require('../Models/UserModel')
-const mongoose = require('mongoose')
-const Objectid = mongoose.Types.ObjectId.isValid
-const jwt = require('jsonwebtoken')
-
-
-const authentication = async function (req, res, next) {
+let studentModel = require("../models/studentModel.js")
+let validation = require("../validations/validation.js")
+let jwt = require("jsonwebtoken")
+const authentication = async (req, res, next) => {
     try {
-        let token = req.headers["authorization"]
-        if (!token) { return res.status(400).send({ status: false, message: "please enter token" }) }
-        let decodetoken;
-        try {
-            decodetoken = jwt.verify(token.split(" ")[1], "secretkey")
-        } catch (err) {
-            return res.status(401).send({ status: false, message: err.message })
-        }
-        req.token = decodetoken
-        next()
-
-    } catch (err) {
-        return res.status(500).send({ status: false, message: err.message })
+        let token = req.headers.authorization
+        if (!token) return res.status(401).send({ status: false, message: "token required" })
+        token = token.split(" ")[1]
+        jwt.verify(token, "PROJECT-6", function (error,decodedToken) {
+            if (error) return res.status(401).send({ status: false, message: error.message })
+            req.token = decodedToken
+            next()
+        })
+    } catch(error) {
+        return res.status(500).send({ status: false, message: error.message })
     }
 }
 
-const authorization = async function (req, res, next) {
-
+const authorization = async (req,res,next) => {
     try {
-        let userid = req.params.userid
-        if (!Objectid(userid)) {
-            return res.status(400).send({ status: false, message: " PLEASE ENTER CORRECT mongoose USER ID" })
-        }
+        let studentId = req.params.studentId
 
-        const findUseridInDb = await usermodel.findById(userid)
-        if (!findUseridInDb) {
-            return res.status(404).send({ status: false, message: `there is no data with this  ${userid}  id in database` })
-        }
+        if(!validation.isValidObjectId(studentId)) return res.status(403).send({status:false,message:"userId is invalid"})
 
-        if (req.token.id != userid) return res.status(403).send({ status: false, message: "authorization failed,userid and token are not of the same user" })
+        let findStudent = await studentModel.findOne({_id:studentId})
+        if(!findStudent) return res.status(403).send({status:false,message:"no student exsists with this Id"})
+        let userId = findStudent.userId
+
+        let tokenUserId = req.token.userId
+        if(userId!=tokenUserId) return res.status(403).send({status:false,message:"authorization failed"})
         next()
 
-    } catch (err) {
-        return res.status(500).send({ status: false, message: err.message })
+    } catch (error) {
+        return res.status(500).send({ status: false, message: error.message })
     }
 }
 
-
-module.exports = { authentication,authorization }
+module.exports = {authentication,authorization}
